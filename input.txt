@@ -1,4 +1,9 @@
-#initial configuration of sio2
+#configuration of sio2
+# Author: Neha
+# Institution: COMSATS University Islamabad
+# Description:
+#   Comprehensive structural analysis of amorphous glass
+#   Molecular Simulation
 units             metal
 dimension          3
 processors        * * *
@@ -71,4 +76,5 @@ compute rdf_all all rdf 100 1 1 1 2 2 2
 fix rdf_output all ave/time 1000 1 1000 c_rdf_all[*] file rdf.txt mode vector
 # Output final data
 write_data final_SiO2.dat
+
 write_restart final_SiO2.rest

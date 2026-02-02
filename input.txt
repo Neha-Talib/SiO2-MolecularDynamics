@@ -1,0 +1,74 @@
+#initial configuration of sio2
+units             metal
+dimension          3
+processors        * * *
+boundary          p p p
+atom_style        full
+
+# data file
+read_data  data.quartz
+
+# Define masses
+mass 1 28.0855  # Mass of Silicon (Si)
+mass 2 15.999   # Mass of Oxygen (O)
+
+#define types of atoms and their charges
+group          Si type 1
+group          O  type 2
+set group      Si charge 2.4
+set group      O charge -1.2
+
+#potential
+pair_style      pedone
+
+# Pedone Buckingham part
+pair_coeff      ********
+# Long-range Coulomb interactions
+kspace_style    pppm 1.0e-5
+kspace_modify   gewald   0.29
+
+# Neighbor list settings
+neighbor          2.0 bin
+neigh_modify      every 1 check yes
+
+# MD parameters
+timestep          0.00025
+
+# Outputs
+thermo            100
+thermo_style      custom step temp pe press vol lx density
+thermo_modify     lost ignore
+dump              2 all custom 1000 md.lammpstrj id type x y z
+fix relax all nve/limit 1.0
+run 2000
+unfix relax
+# Initial minimization
+min_style cg
+minimize        1.0e-6 1.0e-8 10000 100000
+velocity all create 5000 12345 mom yes rot yes dist gaussian
+# Initial heating and equilibration
+
+fix               1 all nvt temp 5000 5000 100
+run               200000
+unfix             1
+write_restart heat_SiO2.rest
+# Pressure equilibration
+fix               1 all npt temp 5000 300 100 iso 0 0 1000
+run               100000
+unfix             1
+write_restart eq_SiO2.rest
+#cooling at 1 K/ps
+fix               1 all npt temp 5000 300 100 iso 0 0 1000
+run               4700000
+unfix             1
+write_restart cool_SiO2.rest
+# Final relaxation
+fix               1 all npt temp 300 300 100 iso 0 0 1000
+run               100000
+unfix             1
+# Radial Distribution Function (RDF) calculation
+compute rdf_all all rdf 100 1 1 1 2 2 2
+fix rdf_output all ave/time 1000 1 1000 c_rdf_all[*] file rdf.txt mode vector
+# Output final data
+write_data final_SiO2.dat
+write_restart final_SiO2.rest
